@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>รายงานหมูป่วยโรงคลอด / 分娩舍生病豬隻通報</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans Thai', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #faf5ff;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea {
+      user-select: text;
+    }
+    body.lang-th .txt-zh { display: none !important; }
+    body.lang-zh .txt-th { display: none !important; }
+
+    .btn-press {
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s ease;
+    }
+    .btn-press:active {
+      transform: scale(0.95);
+    }
+
+    .card-selected {
+      border-color: #7e22ce !important;
+      background-color: #e9d5ff !important;
+      color: #4c1d95 !important;
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.35), 0 6px 14px rgba(126, 34, 206, 0.2) !important;
+      transform: translateY(-1px);
+    }
+    .card-selected div {
+      color: #4c1d95 !important;
+    }
+
+    .row-selected {
+      border-color: #6b21a8 !important;
+      background-color: #9333ea !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.35), 0 6px 14px rgba(147, 51, 234, 0.28) !important;
+      transform: translateY(-1px);
+    }
+    .row-selected div, .row-selected span {
+      color: #ffffff !important;
+    }
+
+    .symptom-selected {
+      border-color: #be123c !important;
+      background-color: #ffe4e6 !important;
+      color: #881337 !important;
+      box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.3), 0 6px 14px rgba(225, 29, 72, 0.18) !important;
+      transform: translateY(-1px);
+    }
+    .symptom-selected div {
+      color: #881337 !important;
+    }
+
+    .all-selected {
+      border-color: #6b21a8 !important;
+      background-color: #9333ea !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.35) !important;
+    }
+  </style>
+</head>
+<body class="lang-both text-slate-800 pb-24">
+
+  <!-- Sticky Light Purple Header -->
+  <header class="sticky top-0 z-40 bg-purple-400 text-white shadow-sm">
+    <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="text-3xl bg-white/25 p-1.5 rounded-xl">🤱</span>
+        <div>
+          <h1 class="font-extrabold text-base leading-tight drop-shadow-sm">
+            <span class="txt-th block">รายงานหมูป่วย (โรงคลอด)</span>
+            <span class="txt-zh block text-purple-50 text-sm font-bold">分娩舍生病豬隻通報</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Language Switcher -->
+      <div class="flex bg-purple-600/40 p-1 rounded-xl border border-white/30 text-xs font-bold">
+        <button type="button" data-action="lang" data-val="both" id="btn-lang-both" class="px-2.5 py-1.5 rounded-lg bg-white text-purple-700 shadow transition">ไทย/中</button>
+        <button type="button" data-action="lang" data-val="th" id="btn-lang-th" class="px-2.5 py-1.5 rounded-lg text-white hover:bg-white/10 transition">ไทย</button>
+        <button type="button" data-action="lang" data-val="zh" id="btn-lang-zh" class="px-2.5 py-1.5 rounded-lg text-white hover:bg-white/10 transition">中文</button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-lg mx-auto px-4 pb-2.5 grid grid-cols-2 gap-2">
+      <button type="button" data-action="tab" data-val="form" id="tab-form" class="py-2 px-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 bg-white text-purple-700 shadow-sm">
+        <span>📝</span>
+        <span>
+          <span class="txt-th">แจ้งหมูป่วย</span>
+          <span class="txt-zh opacity-80"> / 填寫通報</span>
+        </span>
+      </button>
+      <button type="button" data-action="tab" data-val="list" id="tab-list" class="py-2 px-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 bg-purple-500/50 text-white hover:bg-purple-500/70">
+        <span>📋</span>
+        <span>
+          <span class="txt-th">รายการวันนี้</span>
+          <span class="txt-zh opacity-80"> / 今日清單</span>
+        </span>
+        <span id="badge-count" class="ml-1 bg-amber-200 text-purple-900 text-xs font-black px-2 py-0.5 rounded-full">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-lg mx-auto px-4 pt-4">
+
+    <!-- ==================== VIEW 1: REPORT FORM ==================== -->
+    <section id="view-form" class="space-y-5">
+
+      <!-- Step 1: Farrowing Barn Number 2~13 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-200/80">
+        <div class="flex items-center justify-between mb-3">
+          <label class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+            <span class="bg-purple-400 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-black">1</span>
+            <span>
+              <span class="txt-th">โรงคลอดหลังที่ (2–13)</span>
+              <span class="txt-zh text-slate-500 font-bold"> 分娩舍棟別 (2~13棟)</span>
+            </span>
+          </label>
+          <span id="barn-status-badge" class="text-xs font-bold text-rose-500">*จำเป็น / 必填</span>
+        </div>
+
+        <div id="barn-grid" class="grid grid-cols-4 gap-2">
+          <button type="button" data-action="barn" data-val="2" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">2</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 2</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 2 棟</div></button>
+          <button type="button" data-action="barn" data-val="3" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">3</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 3</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 3 棟</div></button>
+          <button type="button" data-action="barn" data-val="4" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">4</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 4</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 4 棟</div></button>
+          <button type="button" data-action="barn" data-val="5" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">5</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 5</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 5 棟</div></button>
+          <button type="button" data-action="barn" data-val="6" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">6</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 6</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 6 棟</div></button>
+          <button type="button" data-action="barn" data-val="7" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">7</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 7</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 7 棟</div></button>
+          <button type="button" data-action="barn" data-val="8" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">8</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 8</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 8 棟</div></button>
+          <button type="button" data-action="barn" data-val="9" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">9</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 9</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 9 棟</div></button>
+          <button type="button" data-action="barn" data-val="10" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">10</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 10</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 10 棟</div></button>
+          <button type="button" data-action="barn" data-val="11" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">11</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 11</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 11 棟</div></button>
+          <button type="button" data-action="barn" data-val="12" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">12</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 12</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 12 棟</div></button>
+          <button type="button" data-action="barn" data-val="13" class="btn-press py-2.5 px-2 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-center"><div class="font-black text-lg text-purple-800 leading-tight">13</div><div class="txt-th font-bold text-[11px] text-slate-600">โรง 13</div><div class="txt-zh font-bold text-[11px] text-purple-500">分娩 13 棟</div></button>
+        </div>
+      </div>
+
+      <!-- Step 2: Row (A, B, C, D) + Stall Number (1~46) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-200/80">
+        <div class="flex items-center justify-between mb-3">
+          <label class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+            <span class="bg-purple-400 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-black">2</span>
+            <span>
+              <span class="txt-th">แถว (A–D) และ หมายเลขซอง (1–46)</span>
+              <span class="txt-zh text-slate-500 font-bold"> 排別與格號</span>
+            </span>
+          </label>
+          <span class="text-xs font-bold text-rose-500">*จำเป็น / 必填</span>
+        </div>
+
+        <div class="mb-3">
+          <div class="text-xs font-bold text-purple-600 mb-1.5">
+            <span class="txt-th">เลือกแถว (A / B / C / D)</span>
+            <span class="txt-zh text-slate-500"> · 選擇排別 (四排)</span>
+          </div>
+          <div id="row-grid" class="grid grid-cols-4 gap-2">
+            <button type="button" data-action="row" data-val="A" class="btn-press py-3 rounded-2xl border-2 border-purple-200 bg-purple-50/50 text-center"><div class="font-black text-xl leading-none text-purple-900">A</div><div class="text-[11px] font-bold opacity-80 mt-0.5 text-purple-700"><span class="txt-th">แถว A</span><span class="txt-zh"> A排</span></div></button>
+            <button type="button" data-action="row" data-val="B" class="btn-press py-3 rounded-2xl border-2 border-purple-200 bg-purple-50/50 text-center"><div class="font-black text-xl leading-none text-purple-900">B</div><div class="text-[11px] font-bold opacity-80 mt-0.5 text-purple-700"><span class="txt-th">แถว B</span><span class="txt-zh"> B排</span></div></button>
+            <button type="button" data-action="row" data-val="C" class="btn-press py-3 rounded-2xl border-2 border-purple-200 bg-purple-50/50 text-center"><div class="font-black text-xl leading-none text-purple-900">C</div><div class="text-[11px] font-bold opacity-80 mt-0.5 text-purple-700"><span class="txt-th">แถว C</span><span class="txt-zh"> C排</span></div></button>
+            <button type="button" data-action="row" data-val="D" class="btn-press py-3 rounded-2xl border-2 border-purple-200 bg-purple-50/50 text-center"><div class="font-black text-xl leading-none text-purple-900">D</div><div class="text-[11px] font-bold opacity-80 mt-0.5 text-purple-700"><span class="txt-th">แถว D</span><span class="txt-zh"> D排</span></div></button>
+          </div>
+        </div>
+
+        <div class="text-xs font-bold text-purple-600 mb-1.5 flex items-center justify-between">
+          <span>
+            <span class="txt-th">หมายเลขคอก (1 - 46)</span>
+            <span class="txt-zh text-slate-500"> · 輸入格號 (1~46格)</span>
+          </span>
+          <span id="stall-preview-badge" class="bg-purple-100 text-purple-700 px-2.5 py-0.5 rounded-lg font-black text-xs">
+            ?棟 · ?-??
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 mb-3">
+          <button type="button" data-action="pen-step" data-val="-1" class="btn-press w-14 h-14 rounded-2xl bg-slate-200 text-slate-800 font-black text-2xl flex items-center justify-center shadow-sm">−</button>
+          <div class="flex-1 relative">
+            <input type="number" inputmode="numeric" min="1" max="46" id="pen-input" placeholder="1 ~ 46" class="w-full h-14 text-center text-2xl font-black tracking-wider bg-purple-50/50 border-2 border-purple-200 focus:border-purple-500 focus:outline-none rounded-2xl text-slate-900" />
+          </div>
+          <button type="button" data-action="pen-step" data-val="1" class="btn-press w-14 h-14 rounded-2xl bg-purple-100 text-purple-700 font-black text-2xl flex items-center justify-center shadow-sm">+</button>
+        </div>
+
+        <div class="grid grid-cols-6 gap-1.5">
+          <button type="button" data-action="pen-digit" data-val="1" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">1</button>
+          <button type="button" data-action="pen-digit" data-val="2" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">2</button>
+          <button type="button" data-action="pen-digit" data-val="3" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">3</button>
+          <button type="button" data-action="pen-digit" data-val="4" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">4</button>
+          <button type="button" data-action="pen-digit" data-val="5" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">5</button>
+          <button type="button" data-action="pen-back" class="btn-press py-2.5 bg-amber-100 rounded-xl font-extrabold text-base text-amber-800">⌫</button>
+          <button type="button" data-action="pen-digit" data-val="6" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">6</button>
+          <button type="button" data-action="pen-digit" data-val="7" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">7</button>
+          <button type="button" data-action="pen-digit" data-val="8" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">8</button>
+          <button type="button" data-action="pen-digit" data-val="9" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">9</button>
+          <button type="button" data-action="pen-digit" data-val="0" class="btn-press py-2.5 bg-slate-100 rounded-xl font-extrabold text-lg text-slate-700">0</button>
+          <button type="button" data-action="pen-clear" class="btn-press py-2.5 bg-rose-100 rounded-xl font-extrabold text-xs text-rose-700">ล้าง/清空</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Pig Type (Sow = fixed 1, Piglet = number or All) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-200/80">
+        <div class="flex items-center justify-between mb-3">
+          <label class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+            <span class="bg-purple-400 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-black">3</span>
+            <span>
+              <span class="txt-th">ประเภทหมู</span>
+              <span class="txt-zh text-slate-500 font-bold"> 母豬還是小豬？</span>
+            </span>
+          </label>
+          <span class="text-xs font-bold text-rose-500">*จำเป็น / 必填</span>
+        </div>
+
+        <div id="pigtype-grid" class="grid grid-cols-2 gap-3">
+          <button type="button" data-action="pig" data-val="sow" id="pig-sow" class="btn-press p-3.5 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-left flex items-center gap-3">
+            <span class="text-3xl">🐷</span>
+            <div>
+              <div class="txt-th font-extrabold text-base text-slate-800 leading-tight">แม่พันธุ์</div>
+              <div class="txt-zh font-bold text-sm text-purple-600">母豬</div>
+            </div>
+          </button>
+          <button type="button" data-action="pig" data-val="piglet" id="pig-piglet" class="btn-press p-3.5 rounded-2xl border-2 border-purple-200 bg-purple-50/40 text-left flex items-center gap-3">
+            <span class="text-3xl">🐽</span>
+            <div>
+              <div class="txt-th font-extrabold text-base text-slate-800 leading-tight">ลูกหมู</div>
+              <div class="txt-zh font-bold text-sm text-purple-600">小豬</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Sick Count Box -->
+        <div class="mt-3 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-sm font-bold text-slate-700">
+              <span class="txt-th block">จำนวนหมูป่วย</span>
+              <span class="txt-zh text-xs text-slate-500">生病頭數</span>
+            </div>
+
+            <!-- Sow Fixed 1 Display -->
+            <div id="count-sow-box" class="hidden items-center gap-2 bg-purple-50 border border-purple-200 px-3.5 py-2 rounded-xl">
+              <span class="text-lg font-black text-purple-700">1</span>
+              <span class="text-xs font-bold text-purple-600">ตัว / 頭 (母豬固定1頭)</span>
+            </div>
+
+            <!-- Piglet Adjustable Count + ALL Button -->
+            <div id="count-piglet-box" class="flex items-center gap-2">
+              <div id="piglet-stepper" class="flex items-center gap-1.5">
+                <button type="button" data-action="count" data-val="-1" class="btn-press w-9 h-10 rounded-xl bg-slate-200 font-black text-lg flex items-center justify-center">−</button>
+                <input type="number" inputmode="numeric" min="1" max="30" id="sick-count-input" value="1" class="w-14 h-10 text-center text-lg font-black bg-purple-50 border-2 border-purple-200 rounded-xl text-purple-700 focus:border-purple-500 focus:outline-none" />
+                <button type="button" data-action="count" data-val="1" class="btn-press w-9 h-10 rounded-xl bg-purple-100 text-purple-700 font-black text-lg flex items-center justify-center">+</button>
+              </div>
+
+              <button type="button" data-action="toggle-all" id="btn-count-all" class="btn-press px-3 h-10 rounded-xl border-2 border-purple-300 bg-purple-50 text-purple-700 font-extrabold text-xs flex flex-col items-center justify-center leading-tight">
+                <span class="txt-th">ทั้งหมด</span>
+                <span class="txt-zh">全部(整窩)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Symptoms -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-200/80">
+        <div class="flex items-center justify-between mb-3">
+          <label class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+            <span class="bg-purple-400 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-black">4</span>
+            <span>
+              <span class="txt-th">อาการป่วย (เลือกได้หลายข้อ)</span>
+              <span class="txt-zh text-slate-500 font-bold"> 症狀 (可複選)</span>
+            </span>
+          </label>
+          <span class="text-xs font-bold text-rose-500">*จำเป็น / 必填</span>
+        </div>
+
+        <div id="symptom-grid" class="grid grid-cols-2 gap-2.5">
+          <button type="button" data-action="sym" data-val="diarrhea" id="sym-diarrhea" class="btn-press p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/70 text-left flex items-center gap-2.5">
+            <span class="text-2xl shrink-0">💩</span>
+            <div class="min-w-0">
+              <div class="txt-th font-extrabold text-sm text-slate-800 leading-tight">ท้องเสีย</div>
+              <div class="txt-zh font-bold text-xs text-slate-500">下痢</div>
+            </div>
+          </button>
+
+          <button type="button" data-action="sym" data-val="lameness" id="sym-lameness" class="btn-press p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/70 text-left flex items-center gap-2.5">
+            <span class="text-2xl shrink-0">🦶</span>
+            <div class="min-w-0">
+              <div class="txt-th font-extrabold text-sm text-slate-800 leading-tight">เจ็บขา</div>
+              <div class="txt-zh font-bold text-xs text-slate-500">腳痛</div>
+            </div>
+          </button>
+
+          <button type="button" data-action="sym" data-val="skin" id="sym-skin" class="btn-press p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/70 text-left flex items-center gap-2.5">
+            <span class="text-2xl shrink-0">🔴</span>
+            <div class="min-w-0">
+              <div class="txt-th font-extrabold text-sm text-slate-800 leading-tight">โรคผิวหนัง</div>
+              <div class="txt-zh font-bold text-xs text-slate-500">皮膚病</div>
+            </div>
+          </button>
+
+          <button type="button" data-action="sym" data-val="other" id="sym-other" class="btn-press p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/70 text-left flex items-center gap-2.5">
+            <span class="text-2xl shrink-0">✏️</span>
+            <div class="min-w-0">
+              <div class="txt-th font-extrabold text-sm text-slate-800 leading-tight">อื่นๆ</div>
+              <div class="txt-zh font-bold text-xs text-slate-500">其他</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Other Symptom Input Box -->
+        <div id="other-symptom-box" class="mt-3">
+          <label class="block text-xs font-bold text-purple-700 mb-1">
+            <span class="txt-th">ระบุอาการอื่นๆ (เช่น ไม่กินอาหาร, มีไข้, ไม่มีนม)</span>
+            <span class="txt-zh text-slate-500"> · 其他症狀填寫欄 (如：不吃料、無乳、發燒...)</span>
+          </label>
+          <input type="text" id="other-symptom-input" placeholder="พิมพ์อาการอื่นๆ ที่นี่ / 請在此填寫其他症狀..." class="w-full px-3.5 py-2.5 bg-purple-50/50 border-2 border-purple-200 focus:border-purple-500 focus:outline-none rounded-xl text-sm font-semibold text-slate-800" />
+        </div>
+      </div>
+
+      <!-- Step 5: Camera Photo Upload -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-200/80">
+        <div class="flex items-center justify-between mb-3">
+          <label class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+            <span class="bg-purple-400 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-black">5</span>
+            <span>
+              <span class="txt-th">ถ่ายรูปอาการ</span>
+              <span class="txt-zh text-slate-500 font-bold"> 現場拍照</span>
+            </span>
+          </label>
+          <span class="text-xs font-semibold text-slate-400">ไม่บังคับ / 選填</span>
+        </div>
+
+        <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" />
+
+        <div id="photo-empty-box" data-action="open-camera" class="btn-press cursor-pointer border-2 border-dashed border-purple-300 bg-purple-50/60 hover:bg-purple-50 rounded-2xl p-6 text-center">
+          <div class="text-4xl mb-2">📷</div>
+          <div class="font-extrabold text-purple-700 text-base">
+            <span class="txt-th block">แตะเพื่อถ่ายรูป / เลือกรูป</span>
+            <span class="txt-zh text-sm text-purple-500">點擊開啟相機拍照或選取照片</span>
+          </div>
+        </div>
+
+        <div id="photo-preview-box" class="hidden relative rounded-2xl overflow-hidden border-2 border-purple-400 bg-slate-900">
+          <img id="photo-preview" src="" alt="Preview" class="w-full max-h-64 object-contain mx-auto" />
+          <div class="absolute bottom-2 right-2 flex gap-2">
+            <button type="button" data-action="open-camera" class="bg-slate-900/80 text-white text-xs font-bold px-3 py-2 rounded-xl backdrop-blur">
+              🔄 ถ่ายใหม่ / 重拍
+            </button>
+            <button type="button" data-action="remove-photo" class="bg-rose-600/90 text-white text-xs font-bold px-3 py-2 rounded-xl backdrop-blur">
+              🗑️ ลบ / 刪除
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: Optional Reporter -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-200/80">
+        <label class="block text-sm font-bold text-slate-700 mb-1">
+          <span class="txt-th">ชื่อผู้แจ้ง</span>
+          <span class="txt-zh text-slate-500"> / 通報人姓名 (選填)</span>
+        </label>
+        <input type="text" id="reporter-input" placeholder="ชื่อเล่น / 泰國同事名字 (如: Somchai)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:border-purple-500 focus:outline-none" />
+      </div>
+
+      <!-- Submit Button -->
+      <button type="button" data-action="submit" class="btn-press w-full py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-2xl font-black text-lg shadow-lg shadow-purple-400/30 flex items-center justify-center gap-2">
+        <span>✅</span>
+        <span>
+          <span class="txt-th">ส่งรายงาน</span>
+          <span class="txt-zh"> / 送出並同步</span>
+        </span>
+      </button>
+
+    </section>
+
+    <!-- ==================== VIEW 2: TODAY'S LIST ==================== -->
+    <section id="view-list" class="hidden space-y-4">
+
+      <!-- Clean Header Bar with Manual Sync Button -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-purple-200/80 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="font-extrabold text-base text-slate-800">
+              <span class="txt-th">สรุปรายงานโรงคลอด</span>
+              <span class="txt-zh text-slate-500 text-sm"> / 分娩舍異常看板</span>
+            </h2>
+            <p id="today-date" class="text-xs text-slate-400 font-semibold"></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="pending-summary" class="inline-block bg-rose-100 text-rose-700 text-xs font-extrabold px-2.5 py-1.5 rounded-lg">待處理: 0</span>
+          </div>
+        </div>
+
+        <!-- Prominent Sheet Connection Bar -->
+        <div id="sheet-banner" class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <span id="sheet-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+            <span id="sheet-status-text" class="font-bold text-amber-900 truncate">尚未連結試算表（請點右側貼上網址）</span>
+          </div>
+          <button type="button" data-action="open-sheet-modal" id="btn-open-sheet-modal" class="btn-press shrink-0 px-2.5 py-1 rounded-lg bg-purple-600 text-white font-extrabold text-xs shadow-sm">
+            🔗 設定網址
+          </button>
+        </div>
+      </div>
+
+      <!-- Report Cards Container -->
+      <div id="report-list-container" class="space-y-3"></div>
+
+    </section>
+
+  </main>
+
+  <!-- Google Sheets Setup Modal -->
+  <div id="sheet-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-black text-base text-purple-900 flex items-center gap-1.5">
+          <span>🔗</span> 設定 Google 試算表網址
+        </h3>
+        <button type="button" data-action="close-sheet-modal" class="text-slate-400 hover:text-slate-700 font-black text-lg px-2">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <label class="block text-xs font-extrabold text-slate-700">貼上 Apps Script 部署網址 (結尾為 /exec)：</label>
+        <input type="url" id="sheet-url-input" placeholder="https://script.google.com/macros/s/...../exec" class="w-full px-3 py-2.5 bg-purple-50/50 border-2 border-purple-200 rounded-xl text-xs font-mono focus:border-purple-500 focus:outline-none" />
+        <p class="text-[11px] text-slate-500 leading-relaxed">
+          💡 儲存後會自動把目前清單裡所有「⏳ 未同步」的資料一次補傳到試算表。
+        </p>
+        <button type="button" data-action="save-sheet-url" class="btn-press w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-extrabold text-sm">
+          💾 儲存並立即同步
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-purple-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-bold flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-4 w-max max-w-[90vw]">
+    <span id="toast-icon">✅</span>
+    <span id="toast-msg">บันทึกสำเร็จ / 通報已送出</span>
+  </div>
+
+  <!-- Image Modal -->
+  <div id="img-modal" data-action="close-modal" class="fixed inset-0 z-50 bg-black/85 hidden items-center justify-center p-4">
+    <img id="img-modal-src" src="" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl" />
+  </div>
+
+  <script>
+    (function() {
+      var MAX_STALL = 46;
+      var NL = String.fromCharCode(10);
+
+      var PIG_TYPES = {
+        sow:    { icon: '🐷', th: 'แม่พันธุ์', zh: '母豬' },
+        piglet: { icon: '🐽', th: 'ลูกหมู',   zh: '小豬' }
+      };
+
+      var SYMPTOMS = {
+        diarrhea: { icon: '💩', th: 'ท้องเสีย',   zh: '下痢' },
+        lameness: { icon: '🦶', th: 'เจ็บขา',     zh: '腳痛' },
+        skin:     { icon: '🔴', th: 'โรคผิวหนัง', zh: '皮膚病' },
+        other:    { icon: '✏️', th: 'อื่นๆ',      zh: '其他' }
+      };
+
+      var selectedBarn = null;
+      var selectedRow = null;
+      var selectedPigType = null;
+      var selectedSymptoms = [];
+      var isAllPiglets = false;
+      var currentPhotoBase64 = null;
+      var reports = [];
+      var sheetUrl = '';
+      var toastTimer = null;
+      var syncQueue = [];
+      var isSyncingQueue = false;
+
+      function safeGetStorage(key) {
+        try { return window.localStorage.getItem(key); } catch (e) { return null; }
+      }
+      function safeSetStorage(key, val) {
+        try { window.localStorage.setItem(key, val); } catch (e) {}
+      }
+
+      function getInitialSheetUrl() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var paramUrl = params.get('sheet');
+          if (paramUrl && paramUrl.indexOf('script.google.com') !== -1) {
+            safeSetStorage('farrowing_sheet_url', paramUrl);
+            return paramUrl;
+          }
+        } catch (e) {}
+        return safeGetStorage('farrowing_sheet_url') || '';
+      }
+
+      function showToast(msg, icon) {
+        var toast = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        document.getElementById('toast-icon').textContent = icon || '✅';
+        toast.classList.remove('opacity-0', 'translate-y-4');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() {
+          toast.classList.add('opacity-0', 'translate-y-4');
+        }, 3200);
+      }
+
+      function updateSheetStatusUI() {
+        var banner = document.getElementById('sheet-banner');
+        var dot = document.getElementById('sheet-status-dot');
+        var txt = document.getElementById('sheet-status-text');
+        var btn = document.getElementById('btn-open-sheet-modal');
+        if (sheetUrl && sheetUrl.indexOf('script.google.com') !== -1) {
+          banner.className = 'flex items-center justify-between gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs';
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0';
+          txt.className = 'font-bold text-emerald-800 truncate';
+          txt.textContent = '✅ 已連結 Google 試算表 (送出自動同步)';
+          btn.className = 'btn-press shrink-0 px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-700 font-bold text-xs';
+          btn.textContent = '更換網址';
+        } else {
+          banner.className = 'flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs';
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0';
+          txt.className = 'font-bold text-amber-900 truncate';
+          txt.textContent = '⚠️ 尚未連結試算表（請點右側貼上網址）';
+          btn.className = 'btn-press shrink-0 px-2.5 py-1 rounded-lg bg-purple-600 text-white font-extrabold text-xs shadow-sm';
+          btn.textContent = '🔗 設定網址';
+        }
+      }
+
+      function enqueueSheetPayload(payloadObj, onDone) {
+        if (!sheetUrl) return;
+        syncQueue.push({ payload: payloadObj, onDone: onDone });
+        processSyncQueue();
+      }
+
+      // Send via BOTH fetch(no-cors) AND dynamic isolated iframe form so it NEVER gets blocked or overwritten
+      function processSyncQueue() {
+        if (isSyncingQueue || syncQueue.length === 0) return;
+        isSyncingQueue = true;
+        var item = syncQueue.shift();
+        var jsonStr = JSON.stringify(item.payload);
+
+        // Single reliable dynamic form POST (prevents duplicate rows!)
+        try {
+          var frameName = 'gas_frame_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+          var iframe = document.createElement('iframe');
+          iframe.name = frameName;
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
+
+          var form = document.createElement('form');
+          form.method = 'POST';
+          form.action = sheetUrl;
+          form.target = frameName;
+          form.style.display = 'none';
+
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'payload';
+          input.value = jsonStr;
+
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+
+          setTimeout(function() {
+            try { document.body.removeChild(form); } catch (e) {}
+            try { document.body.removeChild(iframe); } catch (e) {}
+          }, 5000);
+        } catch (e2) {}
+
+        setTimeout(function() {
+          if (item.onDone) item.onDone();
+          isSyncingQueue = false;
+          processSyncQueue();
+        }, 1600);
+      }
+
+      function syncAllUnsynced(silentIfNone, forceAll) {
+        if (!sheetUrl) return 0;
+        var count = 0;
+        for (var z = reports.length - 1; z >= 0; z--) {
+          if (forceAll || !reports[z].synced) {
+            count++;
+            (function(repItem) {
+              var act = repItem.status === 'treated' ? 'create' : 'create';
+              enqueueSheetPayload(buildSheetPayload(repItem, act), function() {
+                repItem.synced = true;
+                safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+                renderReports();
+              });
+            })(reports[z]);
+          }
+        }
+        if (!silentIfNone) {
+          if (count === 0) {
+            showToast('ทั้งหมดซิงค์แล้ว! / 所有紀錄都已同步至試算表！', '✅');
+          } else {
+            showToast('กำลังซิงค์ ' + count + ' รายการ... / 正在傳送 ' + count + ' 筆資料至試算表...', '🔄');
+          }
+        }
+        return count;
+      }
+
+      function buildSheetPayload(r, actionType) {
+        var pig = PIG_TYPES[r.pigTypeId] || { zh: '', th: '' };
+        var symNames = [];
+        for (var i = 0; i < r.symptomIds.length; i++) {
+          var sid = r.symptomIds[i];
+          var s = SYMPTOMS[sid];
+          if (s) {
+            symNames.push(sid === 'other' && r.otherText ? ('其他:' + r.otherText) : s.zh);
+          }
+        }
+        return {
+          action: actionType || 'create',
+          id: r.id,
+          date: r.date || document.getElementById('today-date').textContent,
+          time: r.time,
+          barn: '分娩' + r.barnId + '棟',
+          row: r.row,
+          stall: r.stall,
+          location: r.row + '-' + r.stall,
+          pigType: pig.zh + '(' + pig.th + ')',
+          count: r.countDisplay,
+          symptoms: symNames.join('、'),
+          reporter: r.reporter,
+          status: r.status === 'treated' ? '已解決' : '待處理',
+          resolvedTime: r.resolvedTime || ''
+        };
+      }
+
+      function formatSingleLineText(rep) {
+        var pObj = PIG_TYPES[rep.pigTypeId] || { zh: '', th: '' };
+        var symArr = [];
+        for (var m = 0; m < rep.symptomIds.length; m++) {
+          var sId = rep.symptomIds[m];
+          var sObj = SYMPTOMS[sId];
+          if (sObj) {
+            symArr.push(sId === 'other' && rep.otherText ? ('其他(' + rep.otherText + ')') : (sObj.zh + '(' + sObj.th + ')'));
+          }
+        }
+        var stTxt = rep.status === 'treated' ? ('✅已解決(' + (rep.resolvedTime || '') + ')') : '🚨待處理';
+        var lines = [
+          '🐷 【分娩舍通報 / แจ้งหมูป่วย】',
+          '位置: 分娩 ' + rep.barnId + ' 棟 (โรง ' + rep.barnId + ') · ' + rep.row + '-' + rep.stall + ' 格',
+          '豬隻: ' + pObj.zh + '(' + pObj.th + ') · ' + rep.countDisplay,
+          '症狀: ' + symArr.join('、'),
+          '狀態: ' + stTxt + ' (' + rep.time + ' · ' + rep.reporter + ')'
+        ];
+        return lines.join(NL);
+      }
+
+      function copyTextToClipboard(text, successMsg) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function() {
+            if (successMsg) showToast(successMsg, '📋');
+          }).catch(function() {
+            fallbackCopyText(text, successMsg);
+          });
+        } else {
+          fallbackCopyText(text, successMsg);
+        }
+      }
+
+      function fallbackCopyText(text, successMsg) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          if (successMsg) showToast(successMsg, '📋');
+        } catch (e) {
+          window.alert(text);
+        }
+        document.body.removeChild(ta);
+      }
+
+      function updateStallPreview() {
+        var badge = document.getElementById('stall-preview-badge');
+        var stallVal = document.getElementById('pen-input').value.trim();
+        var barnTxt = selectedBarn ? (selectedBarn + '棟') : '?棟';
+        var rowTxt = selectedRow ? selectedRow : '?';
+        var numTxt = stallVal ? stallVal : '??';
+        badge.textContent = barnTxt + ' · ' + rowTxt + '-' + numTxt;
+      }
+
+      function selectBarn(val) {
+        selectedBarn = String(val);
+        var btns = document.querySelectorAll('[data-action="barn"]');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].classList.toggle('card-selected', btns[i].getAttribute('data-val') === selectedBarn);
+        }
+        var statusBadge = document.getElementById('barn-status-badge');
+        if (statusBadge) {
+          statusBadge.textContent = '✓ 分娩 ' + selectedBarn + ' 棟';
+          statusBadge.className = 'text-xs font-extrabold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-lg';
+        }
+        updateStallPreview();
+      }
+
+      function selectRow(val) {
+        selectedRow = String(val);
+        var btns = document.querySelectorAll('[data-action="row"]');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].classList.toggle('row-selected', btns[i].getAttribute('data-val') === selectedRow);
+        }
+        updateStallPreview();
+      }
+
+      function selectPigType(val) {
+        selectedPigType = String(val);
+        var btns = document.querySelectorAll('[data-action="pig"]');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].classList.toggle('card-selected', btns[i].getAttribute('data-val') === selectedPigType);
+        }
+
+        var sowBox = document.getElementById('count-sow-box');
+        var pigletBox = document.getElementById('count-piglet-box');
+        if (selectedPigType === 'sow') {
+          isAllPiglets = false;
+          sowBox.classList.remove('hidden');
+          sowBox.classList.add('flex');
+          pigletBox.classList.add('hidden');
+          pigletBox.classList.remove('flex');
+        } else {
+          sowBox.classList.add('hidden');
+          sowBox.classList.remove('flex');
+          pigletBox.classList.remove('hidden');
+          pigletBox.classList.add('flex');
+        }
+      }
+
+      function toggleAllPiglets() {
+        isAllPiglets = !isAllPiglets;
+        var btnAll = document.getElementById('btn-count-all');
+        var stepper = document.getElementById('piglet-stepper');
+        if (isAllPiglets) {
+          btnAll.classList.add('all-selected');
+          stepper.classList.add('opacity-40', 'pointer-events-none');
+        } else {
+          btnAll.classList.remove('all-selected');
+          stepper.classList.remove('opacity-40', 'pointer-events-none');
+        }
+      }
+
+      function toggleSymptom(val) {
+        var idx = selectedSymptoms.indexOf(val);
+        var el = document.getElementById('sym-' + val);
+        if (idx !== -1) {
+          selectedSymptoms.splice(idx, 1);
+          if (el) el.classList.remove('symptom-selected');
+        } else {
+          selectedSymptoms.push(val);
+          if (el) el.classList.add('symptom-selected');
+          if (val === 'other') {
+            var inp = document.getElementById('other-symptom-input');
+            if (inp) inp.focus();
+          }
+        }
+      }
+
+      function setLang(mode) {
+        document.body.classList.remove('lang-both', 'lang-th', 'lang-zh');
+        document.body.classList.add('lang-' + mode);
+        var modes = ['both', 'th', 'zh'];
+        for (var i = 0; i < modes.length; i++) {
+          var m = modes[i];
+          var btn = document.getElementById('btn-lang-' + m);
+          if (btn) {
+            btn.className = (m === mode)
+              ? 'px-2.5 py-1.5 rounded-lg bg-white text-purple-700 shadow transition'
+              : 'px-2.5 py-1.5 rounded-lg text-white hover:bg-white/10 transition';
+          }
+        }
+      }
+
+      function switchTab(tab) {
+        var formView = document.getElementById('view-form');
+        var listView = document.getElementById('view-list');
+        var tabForm = document.getElementById('tab-form');
+        var tabList = document.getElementById('tab-list');
+
+        if (tab === 'form') {
+          formView.classList.remove('hidden');
+          listView.classList.add('hidden');
+          tabForm.className = 'py-2 px-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 bg-white text-purple-700 shadow-sm';
+          tabList.className = 'py-2 px-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 bg-purple-500/50 text-white hover:bg-purple-500/70';
+        } else {
+          formView.classList.add('hidden');
+          listView.classList.remove('hidden');
+          tabList.className = 'py-2 px-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 bg-white text-purple-700 shadow-sm';
+          tabForm.className = 'py-2 px-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 bg-purple-500/50 text-white hover:bg-purple-500/70';
+          renderReports();
+        }
+      }
+
+      function adjustPen(delta) {
+        var input = document.getElementById('pen-input');
+        var val = parseInt(input.value, 10);
+        if (!isNaN(val)) {
+          input.value = Math.min(MAX_STALL, Math.max(1, val + delta));
+        } else {
+          input.value = delta > 0 ? '1' : '';
+        }
+        updateStallPreview();
+      }
+
+      function appendPen(digit) {
+        var input = document.getElementById('pen-input');
+        var candidate = input.value + digit;
+        var num = parseInt(candidate, 10);
+        if (!isNaN(num) && num >= 1 && num <= MAX_STALL) {
+          input.value = String(num);
+        } else if (num > MAX_STALL) {
+          showToast('หมายเลขคอกต้องอยู่ระหว่าง 1–' + MAX_STALL + ' / 格號範圍 1~' + MAX_STALL, '⚠️');
+        }
+        updateStallPreview();
+      }
+
+      function backspacePen() {
+        var input = document.getElementById('pen-input');
+        input.value = input.value.slice(0, -1);
+        updateStallPreview();
+      }
+
+      function clearPen() {
+        document.getElementById('pen-input').value = '';
+        updateStallPreview();
+      }
+
+      function changePigletCount(delta) {
+        if (isAllPiglets) return;
+        var inp = document.getElementById('sick-count-input');
+        var val = parseInt(inp.value, 10) || 1;
+        inp.value = Math.max(1, Math.min(30, val + delta));
+      }
+
+      function removePhoto() {
+        currentPhotoBase64 = null;
+        document.getElementById('camera-input').value = '';
+        document.getElementById('photo-preview').src = '';
+        document.getElementById('photo-preview-box').classList.add('hidden');
+        document.getElementById('photo-empty-box').classList.remove('hidden');
+      }
+
+      function resetForm() {
+        selectedPigType = null;
+        selectedSymptoms = [];
+        isAllPiglets = false;
+        document.getElementById('sick-count-input').value = '1';
+        document.getElementById('pen-input').value = '';
+        document.getElementById('other-symptom-input').value = '';
+        document.getElementById('btn-count-all').classList.remove('all-selected');
+        document.getElementById('piglet-stepper').classList.remove('opacity-40', 'pointer-events-none');
+        document.getElementById('count-sow-box').classList.add('hidden');
+        document.getElementById('count-piglet-box').classList.remove('hidden');
+        document.getElementById('count-piglet-box').classList.add('flex');
+        removePhoto();
+        updateStallPreview();
+
+        var pigBtns = document.querySelectorAll('[data-action="pig"]');
+        for (var i = 0; i < pigBtns.length; i++) pigBtns[i].classList.remove('card-selected');
+        var symBtns = document.querySelectorAll('[data-action="sym"]');
+        for (var j = 0; j < symBtns.length; j++) symBtns[j].classList.remove('symptom-selected');
+      }
+
+      function updateBadges() {
+        document.getElementById('badge-count').textContent = reports.length;
+        var pending = 0;
+        for (var i = 0; i < reports.length; i++) {
+          if (reports[i].status === 'pending') pending++;
+        }
+        document.getElementById('pending-summary').textContent = 'รอรักษา / 待處理: ' + pending;
+      }
+
+      function renderReports() {
+        updateBadges();
+        updateSheetStatusUI();
+        var container = document.getElementById('report-list-container');
+        if (reports.length === 0) {
+          container.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center border border-purple-200 text-slate-400"><div class="text-4xl mb-2">✨</div><div class="font-bold">ยังไม่มีรายงานหมูป่วยวันนี้</div><div class="text-xs mt-1">今日分娩舍尚無生病豬隻通報</div></div>';
+          return;
+        }
+
+        var html = '';
+        for (var i = 0; i < reports.length; i++) {
+          var r = reports[i];
+          var pig = PIG_TYPES[r.pigTypeId] || { icon: '🐷', th: '', zh: '' };
+          var isDone = r.status === 'treated';
+          var locationCode = r.row + '-' + r.stall;
+
+          var symBadges = '';
+          for (var j = 0; j < r.symptomIds.length; j++) {
+            var sid = r.symptomIds[j];
+            var s = SYMPTOMS[sid];
+            if (!s) continue;
+            var label = (sid === 'other' && r.otherText) ? (s.th + ' ' + s.zh + ': ' + r.otherText) : (s.th + ' ' + s.zh);
+            symBadges += '<span class="inline-flex items-center gap-1 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold px-2.5 py-1 rounded-xl"><span>' + s.icon + '</span><span>' + label + '</span></span>';
+          }
+
+          var syncBadgeHtml = r.synced
+            ? '<span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">☁️ 已送出</span>'
+            : '<span class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">⏳ 未同步</span>';
+
+          var photoHtml = r.photo
+            ? '<div class="flex items-center gap-3 bg-purple-50/60 p-2.5 rounded-xl border border-purple-100"><img src="' + r.photo + '" data-action="zoom-img" class="w-16 h-16 object-cover rounded-xl border border-purple-200 cursor-pointer shrink-0" /><div class="text-xs text-slate-500"><div>👤 ' + r.reporter + '</div><div class="text-[11px] text-purple-500 mt-0.5">點擊照片可放大查看</div></div></div>'
+            : '<div class="flex items-center justify-between text-xs text-slate-400"><span>👤 ผู้แจ้ง / 通報人: ' + r.reporter + '</span>' + syncBadgeHtml + '</div>';
+
+          var resolveBtnHtml = isDone
+            ? '<button type="button" data-action="unresolve-report" data-id="' + r.id + '" class="btn-press px-3 py-2 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-800">✅ 已解決 (' + (r.resolvedTime || '') + ') ↩️</button>'
+            : '<button type="button" data-action="resolve-report" data-id="' + r.id + '" class="btn-press px-3.5 py-2 rounded-xl text-xs font-black bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm flex items-center gap-1"><span>✅</span><span>แก้ไขแล้ว / 我已解決</span></button>';
+
+          var copyOneBtnHtml = '<button type="button" data-action="copy-one-line" data-id="' + r.id + '" class="btn-press px-3 py-2 rounded-xl text-xs font-black bg-[#06C755] hover:bg-[#05b34c] text-white shadow-sm flex items-center gap-1"><span>💬</span><span>複製這筆 LINE</span></button>';
+
+          html += '<div class="bg-white rounded-2xl p-4 shadow-sm border-2 ' + (isDone ? 'border-emerald-200 opacity-85' : 'border-rose-200') + ' space-y-3">' +
+            '<div class="flex items-start justify-between gap-2">' +
+              '<div class="flex items-center gap-2.5">' +
+                '<span class="text-3xl bg-purple-50 p-2 rounded-xl">' + pig.icon + '</span>' +
+                '<div>' +
+                  '<div class="flex items-center gap-1.5 flex-wrap">' +
+                    '<span class="bg-purple-500 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-lg">โรง ' + r.barnId + ' / 分娩 ' + r.barnId + ' 棟</span>' +
+                    '<span class="bg-purple-100 text-purple-800 text-xs font-black px-2.5 py-0.5 rounded-lg border border-purple-200">คอก / 格號: ' + locationCode + '</span>' +
+                  '</div>' +
+                  '<div class="font-extrabold text-sm text-slate-800 mt-1">' + pig.th + ' (' + pig.zh + ') · <span class="text-rose-600">' + r.countDisplay + '</span></div>' +
+                '</div>' +
+              '</div>' +
+              '<span class="text-xs font-bold text-slate-400 shrink-0">🕒 ' + r.time + '</span>' +
+            '</div>' +
+            '<div class="flex flex-wrap gap-1.5">' + symBadges + '</div>' +
+            photoHtml +
+            '<div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">' +
+              '<div class="flex items-center gap-1.5 flex-wrap">' +
+                resolveBtnHtml +
+                copyOneBtnHtml +
+              '</div>' +
+              '<button type="button" data-action="delete-report" data-id="' + r.id + '" class="text-xs text-slate-400 hover:text-rose-600 px-2 py-1 font-bold shrink-0">ลบ / 刪除</button>' +
+            '</div>' +
+          '</div>';
+        }
+        container.innerHTML = html;
+      }
+
+      var isSubmitting = false;
+      function submitReport() {
+        if (isSubmitting) return;
+        var stallRaw = document.getElementById('pen-input').value.trim();
+        var stallNum = parseInt(stallRaw, 10);
+        var otherText = document.getElementById('other-symptom-input').value.trim();
+
+        if (!selectedBarn) {
+          showToast('กรุณาเลือกโรงคลอด (2–13) / 請選擇分娩舍棟別 (2~13)', '⚠️');
+          return;
+        }
+        if (!selectedRow) {
+          showToast('กรุณาเลือกแถว (A/B/C/D) / 請選擇排別 (A/B/C/D)', '⚠️');
+          return;
+        }
+        if (isNaN(stallNum) || stallNum < 1 || stallNum > MAX_STALL) {
+          showToast('กรุณาใส่หมายเลขคอก 1–' + MAX_STALL + ' / 請輸入 1~' + MAX_STALL + ' 格號', '⚠️');
+          document.getElementById('pen-input').focus();
+          return;
+        }
+        if (!selectedPigType) {
+          showToast('กรุณาเลือกแม่พันธุ์หรือลูกหมู / 請選擇母豬或小豬', '⚠️');
+          return;
+        }
+        if (selectedSymptoms.length === 0 && !otherText) {
+          showToast('กรุณาเลือกอาการป่วย / 請選擇或填寫症狀', '⚠️');
+          return;
+        }
+        if (selectedSymptoms.indexOf('other') !== -1 && !otherText) {
+          showToast('กรุณาระบุอาการอื่นๆ ในช่อง / 請填寫其他症狀內容', '⚠️');
+          document.getElementById('other-symptom-input').focus();
+          return;
+        }
+
+        if (otherText && selectedSymptoms.indexOf('other') === -1) {
+          selectedSymptoms.push('other');
+        }
+
+        var countDisplay = '1 ตัว/頭';
+        if (selectedPigType === 'piglet') {
+          if (isAllPiglets) {
+            countDisplay = 'ทั้งหมด / 全部(整窩)';
+          } else {
+            var numVal = parseInt(document.getElementById('sick-count-input').value, 10) || 1;
+            countDisplay = numVal + ' ตัว/頭';
+          }
+        }
+
+        var reporter = document.getElementById('reporter-input').value.trim();
+        if (reporter) safeSetStorage('farrowing_reporter', reporter);
+
+        var now = new Date();
+        var hh = String(now.getHours()).padStart(2, '0');
+        var mm = String(now.getMinutes()).padStart(2, '0');
+        var dateStr = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+        var newReport = {
+          id: Date.now(),
+          date: dateStr,
+          time: hh + ':' + mm,
+          barnId: selectedBarn,
+          row: selectedRow,
+          stall: String(stallNum),
+          pigTypeId: selectedPigType,
+          countDisplay: countDisplay,
+          symptomIds: selectedSymptoms.slice(),
+          otherText: otherText,
+          reporter: reporter || 'พนักงาน / 現場人員',
+          photo: currentPhotoBase64,
+          status: 'pending',
+          resolvedTime: '',
+          synced: false
+        };
+
+        reports.unshift(newReport);
+        safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+
+        var singleLineText = formatSingleLineText(newReport);
+        copyTextToClipboard(singleLineText, null);
+
+        if (sheetUrl) {
+          enqueueSheetPayload(buildSheetPayload(newReport, 'create'), function() {
+            newReport.synced = true;
+            safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+            renderReports();
+          });
+          showToast('ส่งรายงาน + ซิงค์ Sheet + คัดลอก LINE รายการนี้แล้ว! / 已同步試算表並複製本筆 LINE 文字！', '✅');
+        } else {
+          showToast('⚠️ 尚未設定試算表網址！請點「🔗 設定網址」貼上 /exec 連結', '⚠️');
+        }
+
+        resetForm();
+        switchTab('list');
+        setTimeout(function() { isSubmitting = false; }, 1500);
+      }
+
+      document.addEventListener('click', function(e) {
+        var target = e.target.closest('[data-action]');
+        if (!target) return;
+        var action = target.getAttribute('data-action');
+        var val = target.getAttribute('data-val');
+
+        if (action === 'barn') selectBarn(val);
+        else if (action === 'row') selectRow(val);
+        else if (action === 'pig') selectPigType(val);
+        else if (action === 'toggle-all') toggleAllPiglets();
+        else if (action === 'sym') toggleSymptom(val);
+        else if (action === 'lang') setLang(val);
+        else if (action === 'tab') switchTab(val);
+        else if (action === 'pen-step') adjustPen(parseInt(val, 10));
+        else if (action === 'pen-digit') appendPen(val);
+        else if (action === 'pen-back') backspacePen();
+        else if (action === 'pen-clear') clearPen();
+        else if (action === 'count') changePigletCount(parseInt(val, 10));
+        else if (action === 'open-camera') document.getElementById('camera-input').click();
+        else if (action === 'remove-photo') removePhoto();
+        else if (action === 'submit') submitReport();
+        else if (action === 'resolve-report') {
+          var id = Number(target.getAttribute('data-id'));
+          var now = new Date();
+          var resTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+          for (var i = 0; i < reports.length; i++) {
+            if (reports[i].id === id) {
+              reports[i].status = 'treated';
+              reports[i].resolvedTime = resTime;
+              if (sheetUrl) {
+                enqueueSheetPayload(buildSheetPayload(reports[i], 'resolve'));
+              }
+              break;
+            }
+          }
+          safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+          renderReports();
+          showToast('แก้ไขแล้ว! / 已標記為解決並更新試算表', '✅');
+        }
+        else if (action === 'unresolve-report') {
+          var uid = Number(target.getAttribute('data-id'));
+          for (var j = 0; j < reports.length; j++) {
+            if (reports[j].id === uid) {
+              reports[j].status = 'pending';
+              reports[j].resolvedTime = '';
+              if (sheetUrl) {
+                enqueueSheetPayload(buildSheetPayload(reports[j], 'resolve'));
+              }
+              break;
+            }
+          }
+          safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+          renderReports();
+        }
+        else if (action === 'copy-one-line') {
+          var cid = Number(target.getAttribute('data-id'));
+          for (var c = 0; c < reports.length; c++) {
+            if (reports[c].id === cid) {
+              var oneText = formatSingleLineText(reports[c]);
+              copyTextToClipboard(oneText, 'คัดลอกรายการนี้แล้ว! / 已複製這一筆 LINE 文字！');
+              break;
+            }
+          }
+        }
+        else if (action === 'delete-report') {
+          var delId = Number(target.getAttribute('data-id'));
+          if (window.confirm('ลบรายการนี้? / 確定刪除此筆通報紀錄？')) {
+            reports = reports.filter(function(item) { return item.id !== delId; });
+            safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+            renderReports();
+          }
+        }
+        else if (action === 'open-sheet-modal') {
+          document.getElementById('sheet-url-input').value = sheetUrl || '';
+          document.getElementById('sheet-modal').classList.remove('hidden');
+          document.getElementById('sheet-modal').classList.add('flex');
+        }
+        else if (action === 'close-sheet-modal') {
+          document.getElementById('sheet-modal').classList.add('hidden');
+          document.getElementById('sheet-modal').classList.remove('flex');
+        }
+        else if (action === 'save-sheet-url') {
+          var urlVal = document.getElementById('sheet-url-input').value.trim();
+          if (urlVal && (urlVal.indexOf('script.google.com') === -1 || urlVal.indexOf('/exec') === -1)) {
+            showToast('網址錯誤！結尾必須是 /exec', '⚠️');
+            return;
+          }
+          sheetUrl = urlVal;
+          safeSetStorage('farrowing_sheet_url', sheetUrl);
+          updateSheetStatusUI();
+          document.getElementById('sheet-modal').classList.add('hidden');
+          document.getElementById('sheet-modal').classList.remove('flex');
+          if (sheetUrl) {
+            var syncedNow = syncAllUnsynced(true, false);
+            if (syncedNow > 0) {
+              showToast('已儲存網址！正在自動補傳 ' + syncedNow + ' 筆未同步資料...', '🔄');
+            } else {
+              showToast('已儲存試算表網址！之後送出會自動同步', '✅');
+            }
+          } else {
+            showToast('已清除試算表網址', 'ℹ️');
+          }
+        }
+        else if (action === 'sync-all-sheets') {
+          if (!sheetUrl) {
+            document.getElementById('sheet-url-input').value = '';
+            document.getElementById('sheet-modal').classList.remove('hidden');
+            document.getElementById('sheet-modal').classList.add('flex');
+            showToast('請先貼上 Google 試算表部署網址', '⚠️');
+            return;
+          }
+          if (reports.length === 0) {
+            showToast('ไม่มีข้อมูล / 目前無通報紀錄', '⚠️');
+            return;
+          }
+          // Force re-send all items currently in the list when user explicitly clicks Sync button
+          syncAllUnsynced(false, true);
+        }
+        else if (action === 'zoom-img') {
+          document.getElementById('img-modal-src').src = target.src;
+          document.getElementById('img-modal').classList.remove('hidden');
+          document.getElementById('img-modal').classList.add('flex');
+        }
+        else if (action === 'close-modal') {
+          document.getElementById('img-modal').classList.add('hidden');
+          document.getElementById('img-modal').classList.remove('flex');
+        }
+      });
+
+      document.getElementById('pen-input').addEventListener('input', function() {
+        var val = parseInt(this.value, 10);
+        if (!isNaN(val)) {
+          if (val > MAX_STALL) {
+            this.value = String(MAX_STALL);
+            showToast('แต่ละแถวมีสูงสุด ' + MAX_STALL + ' คอก / 每排最多 ' + MAX_STALL + ' 格', '⚠️');
+          } else if (val < 1 && this.value !== '') {
+            this.value = '1';
+          }
+        }
+        updateStallPreview();
+      });
+
+      document.getElementById('other-symptom-input').addEventListener('input', function() {
+        var val = this.value.trim();
+        var el = document.getElementById('sym-other');
+        if (val.length > 0 && selectedSymptoms.indexOf('other') === -1) {
+          selectedSymptoms.push('other');
+          if (el) el.classList.add('symptom-selected');
+        }
+      });
+
+      document.getElementById('camera-input').addEventListener('change', function(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var MAX_WIDTH = 800;
+            var width = img.width;
+            var height = img.height;
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.72);
+            document.getElementById('photo-preview').src = currentPhotoBase64;
+            document.getElementById('photo-empty-box').classList.add('hidden');
+            document.getElementById('photo-preview-box').classList.remove('hidden');
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Boot
+      var savedReporter = safeGetStorage('farrowing_reporter');
+      if (savedReporter) document.getElementById('reporter-input').value = savedReporter;
+
+      sheetUrl = getInitialSheetUrl();
+
+      var savedReports = safeGetStorage('farrowing_reports_v14') ;
+      if (savedReports) {
+        try { reports = JSON.parse(savedReports); } catch (e) { reports = []; }
+      } else {
+        reports = [];
+      }
+
+      var now = new Date();
+      document.getElementById('today-date').textContent = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      renderReports();
+    })();
+  </script>
+</body>
+</html>
