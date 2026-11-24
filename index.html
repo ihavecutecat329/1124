@@ -488,16 +488,27 @@
         try { window.localStorage.setItem(key, val); } catch (e) {}
       }
 
+      // 可選：若想把網址寫死在 GitHub 檔裡，可貼在下方引號內（留空則由網址列 ?sheet= 或設定視窗帶入）
+      var BAKED_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyD3YwNs8SVGeMw-2FNlUiM8Ot-faoYGo3ijXF1T_sgPLPzKH4wyiKfBp9TyjCt9OxSUQ/exec';
+
       function getInitialSheetUrl() {
         try {
           var params = new URLSearchParams(window.location.search);
-          var paramUrl = params.get('sheet');
+          var paramUrl = params.get('sheet') || params.get('url');
           if (paramUrl && paramUrl.indexOf('script.google.com') !== -1) {
             safeSetStorage('farrowing_sheet_url', paramUrl);
             return paramUrl;
           }
         } catch (e) {}
-        return safeGetStorage('farrowing_sheet_url') || '';
+        var saved = safeGetStorage('farrowing_sheet_url');
+        if (saved && saved.indexOf('script.google.com') !== -1) {
+          return saved;
+        }
+        if (BAKED_SHEET_URL && BAKED_SHEET_URL.indexOf('script.google.com') !== -1) {
+          safeSetStorage('farrowing_sheet_url', BAKED_SHEET_URL);
+          return BAKED_SHEET_URL;
+        }
+        return '';
       }
 
       function showToast(msg, icon) {
@@ -592,7 +603,7 @@
               var act = repItem.status === 'treated' ? 'create' : 'create';
               enqueueSheetPayload(buildSheetPayload(repItem, act), function() {
                 repItem.synced = true;
-                safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+                safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
                 renderReports();
               });
             })(reports[z]);
@@ -1025,7 +1036,7 @@
         };
 
         reports.unshift(newReport);
-        safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+        safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
 
         var singleLineText = formatSingleLineText(newReport);
         copyTextToClipboard(singleLineText, null);
@@ -1033,7 +1044,7 @@
         if (sheetUrl) {
           enqueueSheetPayload(buildSheetPayload(newReport, 'create'), function() {
             newReport.synced = true;
-            safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+            safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
             renderReports();
           });
           showToast('ส่งรายงาน + ซิงค์ Sheet + คัดลอก LINE รายการนี้แล้ว! / 已同步試算表並複製本筆 LINE 文字！', '✅');
@@ -1081,7 +1092,7 @@
               break;
             }
           }
-          safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+          safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
           renderReports();
           showToast('แก้ไขแล้ว! / 已標記為解決並更新試算表', '✅');
         }
@@ -1097,7 +1108,7 @@
               break;
             }
           }
-          safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+          safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
           renderReports();
         }
         else if (action === 'copy-one-line') {
@@ -1114,7 +1125,7 @@
           var delId = Number(target.getAttribute('data-id'));
           if (window.confirm('ลบรายการนี้? / 確定刪除此筆通報紀錄？')) {
             reports = reports.filter(function(item) { return item.id !== delId; });
-            safeSetStorage('farrowing_reports_v14', JSON.stringify(reports));
+            safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
             renderReports();
           }
         }
@@ -1232,7 +1243,7 @@
 
       sheetUrl = getInitialSheetUrl();
 
-      var savedReports = safeGetStorage('farrowing_reports_v14') ;
+      var savedReports = safeGetStorage('farrowing_reports_v15') ;
       if (savedReports) {
         try { reports = JSON.parse(savedReports); } catch (e) { reports = []; }
       } else {
