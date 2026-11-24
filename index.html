@@ -394,8 +394,12 @@
             </h2>
             <p id="today-date" class="text-xs text-slate-400 font-semibold"></p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5">
             <span id="pending-summary" class="inline-block bg-rose-100 text-rose-700 text-xs font-extrabold px-2.5 py-1.5 rounded-lg">待處理: 0</span>
+            <button type="button" data-action="refresh-from-sheet" class="btn-press py-1.5 px-2.5 bg-purple-100 hover:bg-purple-200 text-purple-800 rounded-lg font-extrabold text-xs flex items-center gap-1">
+              <span>🔄</span>
+              <span>重新載入</span>
+            </button>
           </div>
         </div>
 
@@ -603,7 +607,7 @@
               var act = repItem.status === 'treated' ? 'create' : 'create';
               enqueueSheetPayload(buildSheetPayload(repItem, act), function() {
                 repItem.synced = true;
-                safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
+                safeSetStorage('farrowing_reports_v17', JSON.stringify(reports));
                 renderReports();
               });
             })(reports[z]);
@@ -1036,7 +1040,7 @@
         };
 
         reports.unshift(newReport);
-        safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
+        safeSetStorage('farrowing_reports_v17', JSON.stringify(reports));
 
         var singleLineText = formatSingleLineText(newReport);
         copyTextToClipboard(singleLineText, null);
@@ -1044,7 +1048,7 @@
         if (sheetUrl) {
           enqueueSheetPayload(buildSheetPayload(newReport, 'create'), function() {
             newReport.synced = true;
-            safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
+            safeSetStorage('farrowing_reports_v17', JSON.stringify(reports));
             renderReports();
           });
           showToast('ส่งรายงาน + ซิงค์ Sheet + คัดลอก LINE รายการนี้แล้ว! / 已同步試算表並複製本筆 LINE 文字！', '✅');
@@ -1092,7 +1096,7 @@
               break;
             }
           }
-          safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
+          safeSetStorage('farrowing_reports_v17', JSON.stringify(reports));
           renderReports();
           showToast('แก้ไขแล้ว! / 已標記為解決並更新試算表', '✅');
         }
@@ -1108,7 +1112,7 @@
               break;
             }
           }
-          safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
+          safeSetStorage('farrowing_reports_v17', JSON.stringify(reports));
           renderReports();
         }
         else if (action === 'copy-one-line') {
@@ -1125,7 +1129,7 @@
           var delId = Number(target.getAttribute('data-id'));
           if (window.confirm('ลบรายการนี้? / 確定刪除此筆通報紀錄？')) {
             reports = reports.filter(function(item) { return item.id !== delId; });
-            safeSetStorage('farrowing_reports_v15', JSON.stringify(reports));
+            safeSetStorage('farrowing_reports_v17', JSON.stringify(reports));
             renderReports();
           }
         }
@@ -1179,6 +1183,13 @@
           document.getElementById('img-modal-src').src = target.src;
           document.getElementById('img-modal').classList.remove('hidden');
           document.getElementById('img-modal').classList.add('flex');
+        }
+        else if (action === 'refresh-from-sheet') {
+          if (!sheetUrl) {
+            showToast('請先設定 Google 試算表網址', '⚠️');
+            return;
+          }
+          fetchReportsFromSheet(true);
         }
         else if (action === 'close-modal') {
           document.getElementById('img-modal').classList.add('hidden');
@@ -1237,13 +1248,131 @@
         reader.readAsDataURL(file);
       });
 
+      var isFetchingFromSheet = false;
+
+      function parseBarnId(barnStr) {
+        var m = String(barnStr || '').match(/(\d+)/);
+        return m ? m[1] : '2';
+      }
+
+      function parseLocationParts(locStr, rowVal, stallVal) {
+        var r = rowVal || 'A';
+        var s = stallVal || '1';
+        if (locStr && String(locStr).indexOf('-') !== -1) {
+          var parts = String(locStr).split('-');
+          r = parts[0] || r;
+          s = parts[1] || s;
+        }
+        return { row: String(r).trim(), stall: String(s).trim() };
+      }
+
+      function parsePigTypeId(pigStr) {
+        var txt = String(pigStr || '');
+        if (txt.indexOf('母豬') !== -1 || txt.indexOf('แม่พันธุ์') !== -1) return 'sow';
+        return 'piglet';
+      }
+
+      function parseSymptomsFromText(symStr) {
+        var txt = String(symStr || '');
+        if (!txt) return { ids: ['other'], otherText: '' };
+        var pieces = txt.split(/[、,，]/);
+        var ids = [];
+        var others = [];
+        for (var i = 0; i < pieces.length; i++) {
+          var p = pieces[i].trim();
+          if (!p) continue;
+          if (p.indexOf('下痢') !== -1 || p.indexOf('ท้องเสีย') !== -1) {
+            if (ids.indexOf('diarrhea') === -1) ids.push('diarrhea');
+          } else if (p.indexOf('腳痛') !== -1 || p.indexOf('เจ็บขา') !== -1) {
+            if (ids.indexOf('lameness') === -1) ids.push('lameness');
+          } else if (p.indexOf('皮膚病') !== -1 || p.indexOf('โรคผิวหนัง') !== -1) {
+            if (ids.indexOf('skin') === -1) ids.push('skin');
+          } else {
+            if (ids.indexOf('other') === -1) ids.push('other');
+            others.push(p.replace(/^其他[:：]?/, ''));
+          }
+        }
+        if (ids.length === 0) ids.push('other');
+        return { ids: ids, otherText: others.join('、') };
+      }
+
+      function normalizeRemoteRows(rows) {
+        if (!Array.isArray(rows)) return [];
+        var list = [];
+        for (var i = 0; i < rows.length; i++) {
+          var item = rows[i] || {};
+          var loc = parseLocationParts(item.location, item.row, item.stall);
+          var symParsed = parseSymptomsFromText(item.symptoms);
+          var isTreated = (item.status === '已解決' || item.status === 'treated');
+          list.push({
+            id: item.id || (1000000 + i),
+            date: String(item.date || ''),
+            time: String(item.time || ''),
+            barnId: parseBarnId(item.barn),
+            row: loc.row,
+            stall: loc.stall,
+            pigTypeId: parsePigTypeId(item.pigType),
+            countDisplay: String(item.count || '1 ตัว/頭'),
+            symptomIds: symParsed.ids,
+            otherText: symParsed.otherText,
+            reporter: String(item.reporter || 'พนักงาน / 現場人員'),
+            photo: null,
+            status: isTreated ? 'treated' : 'pending',
+            resolvedTime: String(item.resolvedTime || ''),
+            synced: true
+          });
+        }
+        return list;
+      }
+
+      function fetchReportsFromSheet(showFeedback) {
+        if (!sheetUrl || isFetchingFromSheet) return;
+        isFetchingFromSheet = true;
+        var cbName = 'gas_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        var scriptEl = document.createElement('script');
+        scriptEl.async = true;
+
+        var cleanup = function() {
+          isFetchingFromSheet = false;
+          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+          try { if (scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl); } catch (e2) {}
+        };
+
+        var timeoutId = setTimeout(function() {
+          cleanup();
+          if (showFeedback) showToast('讀取逾時，請確認 Apps Script 已部署新版本', '⚠️');
+        }, 7000);
+
+        window[cbName] = function(res) {
+          clearTimeout(timeoutId);
+          cleanup();
+          if (res && res.ok && Array.isArray(res.rows)) {
+            reports = normalizeRemoteRows(res.rows);
+            safeSetStorage('farrowing_reports_v17', JSON.stringify(reports));
+            renderReports();
+            if (showFeedback) showToast('已載入最新 ' + reports.length + ' 筆通報！', '🔄');
+          } else if (showFeedback) {
+            showToast('試算表尚無資料或需更新 Apps Script', 'ℹ️');
+          }
+        };
+
+        var sep = sheetUrl.indexOf('?') === -1 ? '?' : '&';
+        scriptEl.src = sheetUrl + sep + 'callback=' + cbName + '&_t=' + Date.now();
+        scriptEl.onerror = function() {
+          clearTimeout(timeoutId);
+          cleanup();
+          if (showFeedback) showToast('無法讀取試算表，請確認網址權限', '⚠️');
+        };
+        document.body.appendChild(scriptEl);
+      }
+
       // Boot
       var savedReporter = safeGetStorage('farrowing_reporter');
       if (savedReporter) document.getElementById('reporter-input').value = savedReporter;
 
       sheetUrl = getInitialSheetUrl();
 
-      var savedReports = safeGetStorage('farrowing_reports_v15') ;
+      var savedReports = safeGetStorage('farrowing_reports_v17') || safeGetStorage('farrowing_reports_v17');
       if (savedReports) {
         try { reports = JSON.parse(savedReports); } catch (e) { reports = []; }
       } else {
@@ -1253,6 +1382,10 @@
       var now = new Date();
       document.getElementById('today-date').textContent = now.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
       renderReports();
+
+      if (sheetUrl) {
+        fetchReportsFromSheet(false);
+      }
     })();
   </script>
 </body>
